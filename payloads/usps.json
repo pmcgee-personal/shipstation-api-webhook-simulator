@@ -52,13 +52,13 @@
       {
         "occurred_at": "{{OCCURRED_AT}}",
         "carrier_occurred_at": "{{CARRIER_OCCURRED_AT}}",
-        "description": "Departed USPS Facility",
+        "description": "Forwarded",
         "city_locality": "OAKLAND",
         "state_province": "CA",
         "company_name": "OAKLAND CA DISTRIBUTION CENTER",
-        "event_code": "L1",
-        "event_description": "Departed USPS Facility",
-        "status_code": "IT",
+        "event_code": "06",
+        "event_description": "Forwarded",
+        "status_code": "EX",
         "latitude": 37.7176,
         "longitude": -122.1459,
         "hour_offset": -29

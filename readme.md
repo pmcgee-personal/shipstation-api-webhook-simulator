@@ -5,7 +5,7 @@ A lightweight Node.js utility designed to simulate high-fidelity ShipEngine (SSA
 ## 🚀 Features
 - **Multi-Carrier Support**: Pre-configured templates for FedEx, UPS, and USPS using authentic carrier event codes.
 - **Dynamic Time-Travel**: Automatically calculates `occurred_at` and `carrier_occurred_at` timestamps based on relative offsets to simulate a multi-day journey.
-- **Web Dashboard**: A built-in UI to trigger simulations, customize tracking numbers, and select statuses (Accepted, In Transit, Delivered).
+- **Web Dashboard**: A built-in UI to trigger simulations, customize tracking numbers, and select statuses (Accepted, In Transit, Exception, Delivered).
 - **Activity Log**: Real-time history of fired webhooks directly on the dashboard.
 - **Security Ready**: Includes simulated ShipEngine HMAC/RSA headers for signature verification testing.
 
