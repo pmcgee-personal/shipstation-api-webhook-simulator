@@ -1,0 +1,54 @@
+{
+  "resource_url": "https://api.shipengine.com/v1/tracking?carrier_code=fedex&tracking_number={{TRACKING_NUMBER}}",
+  "resource_type": "API_TRACK",
+  "data": {
+    "label_url": "https://api.shipengine.com/v1/labels/se-622835583",
+    "tracking_number": "{{TRACKING_NUMBER}}",
+    "status_code": "{{STATUS_CODE}}",
+    "status_description": "{{STATUS_DESCRIPTION}}",
+    "carrier_code": "fedex",
+    "carrier_status_code": "{{CARRIER_STATUS_CODE}}",
+    "events": [
+      {
+        "description": "Delivered",
+        "city_locality": "Kingston",
+        "state_province": "ON",
+        "event_code": "DL",
+        "status_code": "DE",
+        "hour_offset": 0
+      },
+      {
+        "description": "At local FedEx facility",
+        "city_locality": "GLENBURNIE",
+        "state_province": "ON",
+        "event_code": "AR",
+        "status_code": "IT",
+        "hour_offset": -3
+      },
+      {
+        "description": "At destination sort facility",
+        "city_locality": "MISSISSAUGA",
+        "state_province": "ON",
+        "event_code": "AR",
+        "status_code": "IT",
+        "hour_offset": -8
+      },
+      {
+        "description": "Left FedEx origin facility",
+        "city_locality": "WOODBRIDGE",
+        "state_province": "ON",
+        "event_code": "DP",
+        "status_code": "IT",
+        "hour_offset": -12
+      },
+      {
+        "description": "Shipment information sent to FedEx",
+        "city_locality": null,
+        "state_province": null,
+        "event_code": "OC",
+        "status_code": "AC",
+        "hour_offset": -24
+      }
+    ]
+  }
+}
