@@ -4,8 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShipStation Webhook Simulator (Live)</title>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/date-fns@2.30.0/dist/date-fns.min.js"></script>
+    
+    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
+    <script src="https://unpkg.com/date-fns@2.30.0/dist/date-fns.min.js"></script>
+
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
         .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
@@ -66,10 +68,7 @@
 </div>
 
 <script>
-    // Library Defensive Check
-    const df = window.dateFns || dateFns;
-
-    // FULL PAYLOAD ENGINE (Now with Exception Support)
+    // Global Carrier Data
     const CARRIERS = {
         fedex: {
             events: [
@@ -102,10 +101,15 @@
     let log = [];
 
     async function fireWebhook() {
+        // Ensure date-fns is ready before running logic
+        const df = window.dateFns;
+        if (!df) {
+            console.error("Library not loaded yet!");
+            return alert("Simulator is still loading libraries. Please wait 2 seconds and try again.");
+        }
+
         const btn = document.getElementById('send-btn');
         const rawUrl = document.getElementById('target_url').value;
-        
-        // Proxy to bypass CORS on Github Pages
         const proxy = "https://corsproxy.io/?";
         const finalUrl = proxy + encodeURIComponent(rawUrl);
 
@@ -157,7 +161,6 @@
         } catch (err) {
             console.error("Webhook Error:", err);
             addLog(config, false);
-            alert("Error: Check console for details. Usually CORS or Invalid URL.");
         } finally {
             btn.disabled = false;
         }
