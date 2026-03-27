@@ -6,7 +6,7 @@
     <title>ShipStation Webhook Simulator (Live)</title>
     
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.30.0/date_fns.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
 
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
@@ -68,7 +68,6 @@
 </div>
 
 <script>
-    // CARRIER DATA
     const CARRIERS = {
         fedex: {
             events: [
@@ -101,12 +100,8 @@
     let log = [];
 
     async function fireWebhook() {
-        // GLOBAL RESOLVER: Catch the library under common browser-global names
-        const df = window.dateFns || window.date_fns || dateFns || date_fns;
-        
-        if (!df) {
-            console.error("Library not detected. Check console for 404s.");
-            return alert("Simulator is still loading. If this persists, refresh the page.");
+        if (typeof dayjs === 'undefined') {
+            return alert("Loading libraries... please wait a moment.");
         }
 
         const btn = document.getElementById('send-btn');
@@ -117,13 +112,14 @@
         if (!rawUrl) return alert("Please provide a destination URL.");
 
         btn.disabled = true;
+        
         const config = {
             carrier: document.getElementById('carrier').value,
             tracking: document.getElementById('tracking_number').value,
             status: document.getElementById('status').value
         };
 
-        const now = new Date();
+        const now = dayjs();
         const carrierData = CARRIERS[config.carrier];
         
         const startIndex = carrierData.events.findIndex(e => e.status_code === config.status);
@@ -132,11 +128,11 @@
 
         const processedEvents = historyEvents.map(ev => {
             const diff = Math.abs(ev.hour_offset - refOffset);
-            const time = df.subHours(now, diff);
+            const time = now.subtract(diff, 'hour');
             return {
                 ...ev,
-                occurred_at: df.formatISO(time),
-                carrier_occurred_at: df.formatISO(time).split('Z')[0]
+                occurred_at: time.format(),
+                carrier_occurred_at: time.format().split('+')[0]
             };
         });
 
@@ -150,8 +146,8 @@
                 carrier_status_code: processedEvents[0].event_code,
                 carrier_status_description: processedEvents[0].description,
                 carrier_detail_code: processedEvents[0].carrier_detail_code || null,
-                ship_date: df.formatISO(df.subHours(now, 72)),
-                actual_delivery_date: config.status === 'DE' ? df.formatISO(now) : null,
+                ship_date: now.subtract(72, 'hour').format(),
+                actual_delivery_date: config.status === 'DE' ? now.format() : null,
                 events: processedEvents
             }
         };
