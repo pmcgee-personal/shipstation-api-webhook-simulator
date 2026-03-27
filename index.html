@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShipStation Webhook Simulator (Production Schema)</title>
+    <title>ShipStation Webhook Simulator (Final Production)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
     <style>
@@ -115,6 +115,9 @@
         const historyEvents = carrierData.events.slice(startIndex);
         const refOffset = historyEvents[0].hour_offset;
 
+        // Generate a random 9-digit ID for the label
+        const randomLabelId = Math.floor(100000000 + Math.random() * 900000000);
+
         const processedEvents = historyEvents.map(ev => {
             const diffFromTarget = Math.abs(ev.hour_offset - refOffset);
             const eventTime = now.subtract(diffFromTarget, 'hour');
@@ -134,7 +137,8 @@
                 carrier_detail_code: null,
                 status_code: ev.status_code,
                 status_detail_code: null,
-                status_description: ev.status_code === 'EX' ? "Exception" : (ev.status_code === 'DE' ? "Delivered" : "In Transit"),
+                // PRODUCTION FIX: status_description is null inside the events array
+                status_description: null,
                 status_detail_description: null,
                 proof_of_delivery_url: null,
                 latitude: ev.lat,
@@ -146,7 +150,8 @@
             resource_url: `https://api.shipengine.com/v1/tracking?carrier_code=${config.carrier}&tracking_number=${config.tracking}`,
             resource_type: "API_TRACK",
             data: {
-                label_url: "https://api.shipengine.com/v1/labels/se-mock-label",
+                // PRODUCTION FIX: Dynamic se- value
+                label_url: `https://api.shipengine.com/v1/labels/se-${randomLabelId}`,
                 tracking_number: config.tracking,
                 status_code: config.status,
                 status_detail_code: null,
@@ -156,7 +161,6 @@
                 carrier_status_code: processedEvents[0].event_code,
                 carrier_status_description: processedEvents[0].description,
                 ship_date: now.subtract(72, 'hour').format(),
-                // LOGIC FIX: estimated_delivery_date is null if status is Delivered (DE)
                 estimated_delivery_date: config.status === 'DE' ? null : now.add(24, 'hour').format(),
                 actual_delivery_date: config.status === 'DE' ? now.format() : null,
                 exception_description: config.status === 'EX' ? processedEvents[0].description : null,
