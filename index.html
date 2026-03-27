@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShipStation Webhook Simulator (Full Schema)</title>
+    <title>ShipStation Webhook Simulator (Production Schema)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
     <style>
@@ -14,6 +14,7 @@
         label { display: block; font-size: 11px; font-weight: 700; color: #4a5568; margin-bottom: 5px; text-transform: uppercase; }
         input, select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
         button { width: 100%; padding: 12px; background: #3182ce; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        button:hover { background: #2b6cb0; }
         .history { margin-top: 25px; border-top: 1px solid #edf2f7; padding-top: 15px; }
         .history-item { font-size: 12px; padding: 8px; border-bottom: 1px solid #f7fafc; display: flex; justify-content: space-between; align-items: center; }
         .status-tag { font-size: 10px; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
@@ -155,7 +156,8 @@
                 carrier_status_code: processedEvents[0].event_code,
                 carrier_status_description: processedEvents[0].description,
                 ship_date: now.subtract(72, 'hour').format(),
-                estimated_delivery_date: now.add(24, 'hour').format(),
+                // LOGIC FIX: estimated_delivery_date is null if status is Delivered (DE)
+                estimated_delivery_date: config.status === 'DE' ? null : now.add(24, 'hour').format(),
                 actual_delivery_date: config.status === 'DE' ? now.format() : null,
                 exception_description: config.status === 'EX' ? processedEvents[0].description : null,
                 events: processedEvents
