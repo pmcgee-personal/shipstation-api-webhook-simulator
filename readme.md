@@ -2,7 +2,7 @@
 
 [![View Live](https://img.shields.io/badge/View-Live_Demo-brightgreen)](https://pmcgee-personal.github.io/shipstation-api-webhook-simulator/)
 
-A lightweight, browser-based tool to simulate **ShipEngine/ShipStation** tracking webhooks with 100% production-accurate JSON schemas.
+A lightweight, browser-based tool to simulate **ShipStation API (fka ShipEngine)** tracking webhooks with production-accurate JSON schemas.
 
 ## 🛠 Features
 * **Carrier Specifics:** Supports FedEx, UPS, and USPS event codes and geographic data.
@@ -29,10 +29,9 @@ To bypass browser security restrictions (CORS) when sending requests from GitHub
 ---
 
 ## 📄 Example Payload Structure
-The tool sends a `POST` request with a JSON body following the ShipEngine standard:
+The tool sends a `POST` request with a JSON body following the ShipStation API standard:
 - `estimated_delivery_date`: Null if status is Delivered.
 - `actual_delivery_date`: Populated only if status is Delivered.
-- `status_description`: Null within the events array, populated in the main data object.
 
 ---
 
