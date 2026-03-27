@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ShipStation Webhook Simulator (Live)</title>
     
-    <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    <script src="https://unpkg.com/date-fns@2.30.0/dist/date-fns.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/date-fns/2.30.0/date_fns.min.js"></script>
 
     <style>
         body { font-family: -apple-system, system-ui, sans-serif; background: #f0f2f5; display: flex; justify-content: center; padding: 20px; }
@@ -68,7 +68,7 @@
 </div>
 
 <script>
-    // Global Carrier Data
+    // CARRIER DATA
     const CARRIERS = {
         fedex: {
             events: [
@@ -101,11 +101,12 @@
     let log = [];
 
     async function fireWebhook() {
-        // Ensure date-fns is ready before running logic
-        const df = window.dateFns;
+        // GLOBAL RESOLVER: Catch the library under common browser-global names
+        const df = window.dateFns || window.date_fns || dateFns || date_fns;
+        
         if (!df) {
-            console.error("Library not loaded yet!");
-            return alert("Simulator is still loading libraries. Please wait 2 seconds and try again.");
+            console.error("Library not detected. Check console for 404s.");
+            return alert("Simulator is still loading. If this persists, refresh the page.");
         }
 
         const btn = document.getElementById('send-btn');
@@ -113,15 +114,15 @@
         const proxy = "https://corsproxy.io/?";
         const finalUrl = proxy + encodeURIComponent(rawUrl);
 
+        if (!rawUrl) return alert("Please provide a destination URL.");
+
+        btn.disabled = true;
         const config = {
             carrier: document.getElementById('carrier').value,
             tracking: document.getElementById('tracking_number').value,
             status: document.getElementById('status').value
         };
 
-        if (!rawUrl) return alert("Please provide a destination URL.");
-
-        btn.disabled = true;
         const now = new Date();
         const carrierData = CARRIERS[config.carrier];
         
