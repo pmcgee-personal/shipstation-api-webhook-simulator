@@ -1,4 +1,4 @@
-# 🚀 ShipStation Webhook Simulator
+# 🚀 ShipStation API Webhook Simulator
 
 [![View Live](https://img.shields.io/badge/View-Live_Demo-brightgreen)](https://pmcgee-personal.github.io/shipstation-api-webhook-simulator/)
 
