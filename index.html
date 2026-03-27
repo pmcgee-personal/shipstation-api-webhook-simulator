@@ -66,10 +66,14 @@
 </div>
 
 <script>
-    // FULL PAYLOAD ENGINE
+    // Library Defensive Check
+    const df = window.dateFns || dateFns;
+
+    // FULL PAYLOAD ENGINE (Now with Exception Support)
     const CARRIERS = {
         fedex: {
             events: [
+                { description: "Delivery exception - Incorrect Address", event_code: "EX", status_code: "EX", hour_offset: 0 },
                 { description: "Delivered", event_code: "DL", status_code: "DE", hour_offset: 0 },
                 { description: "On FedEx vehicle for delivery", event_code: "OD", status_code: "IT", hour_offset: -4 },
                 { description: "Arrived at FedEx location", event_code: "AR", status_code: "IT", hour_offset: -12 },
@@ -78,6 +82,7 @@
         },
         ups: {
             events: [
+                { description: "Exception: Weather Delay", event_code: "X", status_code: "EX", hour_offset: 0 },
                 { description: "Delivered", event_code: "D", carrier_detail_code: "FS", status_code: "DE", hour_offset: 0 },
                 { description: "Out For Delivery", event_code: "I", carrier_detail_code: "OT", status_code: "IT", hour_offset: -6 },
                 { description: "Shipped", event_code: "M", carrier_detail_code: "MP", status_code: "AC", hour_offset: -36 }
@@ -85,6 +90,7 @@
         },
         usps: {
             events: [
+                { description: "Delivery Exception - Held at Post Office", event_code: "EX", status_code: "EX", hour_offset: 0 },
                 { description: "Delivered, In/At Mailbox", event_code: "01", status_code: "DE", hour_offset: 0 },
                 { description: "Out for Delivery", event_code: "OF", status_code: "IT", hour_offset: -5 },
                 { description: "Arrived at Post Office", event_code: "AR", status_code: "IT", hour_offset: -10 },
@@ -99,7 +105,7 @@
         const btn = document.getElementById('send-btn');
         const rawUrl = document.getElementById('target_url').value;
         
-        // CORS Proxy to prevent browser "freezing"
+        // Proxy to bypass CORS on Github Pages
         const proxy = "https://corsproxy.io/?";
         const finalUrl = proxy + encodeURIComponent(rawUrl);
 
@@ -119,14 +125,13 @@
         const historyEvents = carrierData.events.slice(startIndex);
         const refOffset = historyEvents[0].hour_offset;
 
-        // Use window.dateFns to ensure library visibility
         const processedEvents = historyEvents.map(ev => {
             const diff = Math.abs(ev.hour_offset - refOffset);
-            const time = window.dateFns.subHours(now, diff);
+            const time = df.subHours(now, diff);
             return {
                 ...ev,
-                occurred_at: window.dateFns.formatISO(time),
-                carrier_occurred_at: window.dateFns.formatISO(time).split('Z')[0]
+                occurred_at: df.formatISO(time),
+                carrier_occurred_at: df.formatISO(time).split('Z')[0]
             };
         });
 
@@ -140,8 +145,8 @@
                 carrier_status_code: processedEvents[0].event_code,
                 carrier_status_description: processedEvents[0].description,
                 carrier_detail_code: processedEvents[0].carrier_detail_code || null,
-                ship_date: window.dateFns.formatISO(window.dateFns.subHours(now, 72)),
-                actual_delivery_date: config.status === 'DE' ? window.dateFns.formatISO(now) : null,
+                ship_date: df.formatISO(df.subHours(now, 72)),
+                actual_delivery_date: config.status === 'DE' ? df.formatISO(now) : null,
                 events: processedEvents
             }
         };
@@ -152,6 +157,7 @@
         } catch (err) {
             console.error("Webhook Error:", err);
             addLog(config, false);
+            alert("Error: Check console for details. Usually CORS or Invalid URL.");
         } finally {
             btn.disabled = false;
         }
