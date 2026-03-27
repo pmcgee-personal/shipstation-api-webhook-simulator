@@ -13,9 +13,10 @@
         .container { background: white; padding: 30px; border-radius: 12px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); width: 100%; max-width: 450px; }
         h1 { font-size: 20px; margin-top: 0; color: #1a202c; border-bottom: 2px solid #edf2f7; padding-bottom: 15px; }
         .form-group { margin-bottom: 15px; }
-        label { display: block; font-size: 12px; font-weight: 700; color: #4a5568; margin-bottom: 5px; text-transform: uppercase; }
-        input, select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; box-sizing: border-box; }
-        button { width: 100%; padding: 12px; background: #3182ce; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; }
+        label { display: block; font-size: 11px; font-weight: 700; color: #4a5568; margin-bottom: 5px; text-transform: uppercase; letter-spacing: 0.5px; }
+        input, select { width: 100%; padding: 10px; border: 1px solid #e2e8f0; border-radius: 6px; font-size: 14px; box-sizing: border-box; outline: none; }
+        input:focus { border-color: #3182ce; box-shadow: 0 0 0 1px #3182ce; }
+        button { width: 100%; padding: 12px; background: #3182ce; color: white; border: none; border-radius: 6px; font-weight: 600; cursor: pointer; margin-top: 10px; transition: background 0.2s; }
         button:hover { background: #2b6cb0; }
         button:disabled { background: #cbd5e0; cursor: not-allowed; }
         .history { margin-top: 25px; border-top: 1px solid #edf2f7; padding-top: 15px; }
@@ -68,6 +69,7 @@
 </div>
 
 <script>
+    // Carrier data including Exception events
     const CARRIERS = {
         fedex: {
             events: [
@@ -100,16 +102,15 @@
     let log = [];
 
     async function fireWebhook() {
+        // Ensure dayjs is loaded
         if (typeof dayjs === 'undefined') {
             return alert("Loading libraries... please wait a moment.");
         }
 
         const btn = document.getElementById('send-btn');
-        const rawUrl = document.getElementById('target_url').value;
-        const proxy = "https://corsproxy.io/?";
-        const finalUrl = proxy + encodeURIComponent(rawUrl);
-
-        if (!rawUrl) return alert("Please provide a destination URL.");
+        const targetUrl = document.getElementById('target_url').value;
+        
+        if (!targetUrl) return alert("Please provide a destination URL.");
 
         btn.disabled = true;
         
@@ -153,11 +154,15 @@
         };
 
         try {
-            await axios.post(finalUrl, payload);
+            // Direct POST with text/plain to bypass complex CORS Preflight blocks
+            await axios.post(targetUrl, JSON.stringify(payload), {
+                headers: { 'Content-Type': 'text/plain' }
+            });
             addLog(config, true);
         } catch (err) {
-            console.error("Webhook Error:", err);
+            console.error("Full Webhook Error Details:", err);
             addLog(config, false);
+            alert("Network Error: Check the browser console (Inspect > Console) for details.");
         } finally {
             btn.disabled = false;
         }
