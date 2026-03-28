@@ -7,7 +7,7 @@ A lightweight, browser-based tool to simulate **ShipStation API (fka ShipEngine)
 ## 🛠 Features
 * **Carrier Specifics:** Supports FedEx, UPS, and USPS event codes and geographic data.
 * **Timeline Logic:** Automatically generates a logical history of events with relative timestamps.
-* **Production Schema:** Matches the ShipEngine `API_TRACK` resource type exactly, including dynamic label IDs and null-safe event objects.
+* **Production Schema:** Matches the ShipStation API `API_TRACK` resource type exactly, including dynamic label IDs and null-safe event objects.
 
 ---
 
