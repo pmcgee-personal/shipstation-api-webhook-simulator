@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ShipStation Webhook Simulator (Final Production)</title>
+    <title>ShipStation Webhook Simulator (Signed)</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
     <style>
@@ -26,7 +26,7 @@
 <body>
 
 <div class="container">
-    <h1>🚀 ShipStation API Webhook Simulator</h1>
+    <h1>🚀 Webhook Simulator</h1>
     <div class="info-box">
         <strong>Required:</strong> Activate <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">CORS Anywhere</a> first.
     </div>
@@ -114,14 +114,11 @@
         const startIndex = carrierData.events.findIndex(e => e.status_code === config.status);
         const historyEvents = carrierData.events.slice(startIndex);
         const refOffset = historyEvents[0].hour_offset;
-
-        // Generate a random 9-digit ID for the label
         const randomLabelId = Math.floor(100000000 + Math.random() * 900000000);
 
         const processedEvents = historyEvents.map(ev => {
             const diffFromTarget = Math.abs(ev.hour_offset - refOffset);
             const eventTime = now.subtract(diffFromTarget, 'hour');
-            
             return {
                 occurred_at: eventTime.format(),
                 carrier_occurred_at: eventTime.format().split('+')[0],
@@ -137,7 +134,6 @@
                 carrier_detail_code: null,
                 status_code: ev.status_code,
                 status_detail_code: null,
-                // PRODUCTION FIX: status_description is null inside the events array
                 status_description: null,
                 status_detail_description: null,
                 proof_of_delivery_url: null,
@@ -150,7 +146,6 @@
             resource_url: `https://api.shipengine.com/v1/tracking?carrier_code=${config.carrier}&tracking_number=${config.tracking}`,
             resource_type: "API_TRACK",
             data: {
-                // PRODUCTION FIX: Dynamic se- value
                 label_url: `https://api.shipengine.com/v1/labels/se-${randomLabelId}`,
                 tracking_number: config.tracking,
                 status_code: config.status,
@@ -169,7 +164,15 @@
         };
 
         try {
-            await axios.post(finalUrl, payload, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+            // Updated POST with Authentication Headers
+            await axios.post(finalUrl, payload, { 
+                headers: { 
+                    'X-Requested-With': 'XMLHttpRequest',
+                    'x-shipengine-timestamp': Math.floor(Date.now() / 1000).toString(),
+                    'x-shipengine-rsa-sha256-signature': 'SIMULATED_SIGNATURE_BASE64_STRING',
+                    'x-shipengine-rsa-sha256-key-id': 'key_sim_123456789'
+                } 
+            });
             addLog(config, true);
         } catch (err) {
             console.error(err);
