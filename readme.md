@@ -25,7 +25,7 @@ A lightweight Node.js utility designed to simulate high-fidelity ShipEngine (SSA
 4. Access the Dashboard
    Open http://localhost:3000 in your browser
 
-USAGE
+## Usage
 
 1. Enter your webhook URL
 2. Enter a tracking number
@@ -33,11 +33,11 @@ USAGE
 4. Click Fire Webhook
 5. Check your endpoint to see the incoming JSON payload
 
-Project Stucture
+## Project Stucture
 - /payloads : JSON templates containing carrier specific event logic
 - /public : Frontend assets for the web dashboard
-- index,js : The core express server and simulation engine
+- index.js : The core express server and simulation engine
 
-License
+## License
 
 MIT
