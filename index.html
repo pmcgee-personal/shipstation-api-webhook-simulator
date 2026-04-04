@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="apple-touch-icon" href="icon.png">
-    <title>ShipStation Webhook Simulator (Signed)</title>
+    <title>ShipStation API  Webhook Simulator</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/axios/1.6.2/axios.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dayjs/1.11.10/dayjs.min.js"></script>
     <style>
@@ -190,6 +190,14 @@
             </div>
         `).join('');
     }
+// Register the Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./sw.js')
+      .then(reg => console.log('Service Worker registered!', reg))
+      .catch(err => console.log('Service Worker registration failed:', err));
+  });
+}
 </script>
 </body>
 </html>
