@@ -4,10 +4,22 @@
 
 A lightweight, browser-based tool to simulate **ShipStation API (fka ShipEngine)** tracking webhooks with production-accurate JSON schemas.
 
+📱 Mobile Installation (PWA)
+This simulator is a Progressive Web App, meaning you can install it on your phone's home screen without using an App Store:
+
+iOS (Safari): Tap the Share icon (square with up arrow) and select "Add to Home Screen."
+
+Android (Chrome): Tap the three dots in the top right and select "Install app" or "Add to Home screen."
+
+Desktop: Click the Install icon in the address bar of Chrome or Edge to run it as a standalone window.
+
 ## 🛠 Features
 * **Carrier Specifics:** Supports FedEx, UPS, and USPS event codes and geographic data.
 * **Timeline Logic:** Automatically generates a logical history of events with relative timestamps.
 * **Production Schema:** Matches the ShipStation API `API_TRACK` resource type exactly, including dynamic label IDs and null-safe event objects.
+* **Offline Ready (Basic)**: Includes a Service Worker (sw.js) to meet PWA installation requirements.
+* **App Manifest**: Configured with a manifest.json for a native look and feel, including a custom app icon and theme colors.
+* **Mobile Optimized**: Uses a specific viewport meta-tag to prevent accidental zooming on mobile inputs.
 
 ---
 
