@@ -13,8 +13,8 @@ A lightweight Node.js utility designed to simulate high-fidelity ShipEngine (SSA
 
 1. **Clone the repository:**
    ```bash
-   git clone <your-repo-url>
-   cd shipstation-api-tracking-simulator
+   git clone https://github.com/pmcgee-personal/shipstation-api-webhook-simulator.git
+   cd shipstation-api-webhook-simulator
 
 2. Install dependencies
    npm install
@@ -33,7 +33,7 @@ A lightweight Node.js utility designed to simulate high-fidelity ShipEngine (SSA
 4. Click Fire Webhook
 5. Check your endpoint to see the incoming JSON payload
 
-## Project Stucture
+## Project Structure
 - /payloads : JSON templates containing carrier specific event logic
 - /public : Frontend assets for the web dashboard
 - index.js : The core express server and simulation engine
