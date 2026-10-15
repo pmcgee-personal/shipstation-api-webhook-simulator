@@ -1,12 +1,17 @@
+# readme.md (updated)
+
+Copy everything inside the code block below and paste it over the contents of `readme.md`.
+
+```markdown
 # 🚀 ShipStation API Webhook Simulator
 
 [![View Live](https://img.shields.io/badge/View-Live_Demo-brightgreen)](https://pmcgee-personal.github.io/shipstation-api-webhook-simulator/)
 
 A lightweight, browser-based tool that sends **ShipStation API (formerly ShipEngine)** tracking webhooks to your endpoint, so you can build and test a webhook receiver without waiting on a live shipment.
 
-The payloads are **real `API_TRACK` captures** from production, re-timed so the newest scan happens the moment you click the button. They come from the [ShipStation Integration Toolkit](https://github.com/pmcgee-personal/shipstation-integration-toolkit) (`webhooks/tracking-v1/`), where every field and carrier quirk is documented.
+The payloads are **real `API_TRACK` captures** from production, sanitized and re-timed so the newest scan happens the moment you click the button.
 
-> **Which webhook is this?** `API_TRACK` is the tracking webhook for **ShipStation API** accounts. ShipStation accounts receive a different one, `TRACK_EVENT_V2`, which this tool does not send. An integrator normally has one kind of account, not both. The toolkit has fixtures for both under `webhooks/tracking-v1/` and `webhooks/tracking-v2/`.
+> **Which webhook is this?** `API_TRACK` is the tracking webhook for **ShipStation API** accounts. ShipStation accounts receive a different one, `TRACK_EVENT_V2`, which this tool does not send.
 
 ---
 
@@ -83,8 +88,6 @@ Every send is a `POST` with a JSON body in the ShipStation API `API_TRACK` shape
 | City and state on scans | Yes, except the label scan | Yes, except no-location scans | Yes, except the label scan | **No** (ZIP and coordinates only) |
 | ZIP code                | Delivery scan only         | Most scans                    | **Never**                  | Every scan                        |
 
-The toolkit's `webhooks/tracking-v1/` folder documents each carrier in full.
-
 ### Not simulated
 
 - **Exceptions:** there's no real capture of a delivery exception yet, so the option is hidden.
@@ -117,11 +120,11 @@ This simulator is a Progressive Web App, so you can install it without an app st
 
 ### Refreshing the fixtures
 
-`fixtures.js` was copied once from the toolkit's `webhooks/tracking-v1/` folder. To refresh it, copy each carrier's four `api-track-*.json` files into it, drop the toolkit's `_captured_at` key (ShipStation doesn't send it), and keep the carrier keys as `ups`, `usps`, `fedex` and `dhl_global_mail`. Automating this is a possible future step.
+`fixtures.js` holds one entry per carrier, keyed by the `carrier_code` used in the `resource_url`: `ups`, `usps`, `fedex` and `dhl_global_mail`. Each carrier has four scenarios, `label-created`, `in-transit`, `out-for-delivery` and `delivered`, and each scenario is a webhook body exactly as ShipStation sends it (`resource_url`, `resource_type` and `data`). To refresh one, replace its body with a new capture, and keep any extra keys that aren't part of the real body out of it. Mask the tracking number and the `se-` ID in `label_url` before committing.
 
 ### Branches
 
-`gh-pages` holds this app and is the branch GitHub Pages serves. `main` holds an earlier, local Node.js version of the tool.
+`gh-pages` is the default branch. It holds this app and is the branch GitHub Pages serves. `legacy-main` holds an earlier, local Node.js version of the tool.
 
 ---
 
@@ -131,3 +134,4 @@ This simulator is a Progressive Web App, so you can install it without an app st
 - **Plain JavaScript:** no build step, and `replay.js` has no dependencies
 - **GitHub Pages** (hosting)
 - **CORS Anywhere** (default proxy, replaceable)
+```
