@@ -2,52 +2,132 @@
 
 [![View Live](https://img.shields.io/badge/View-Live_Demo-brightgreen)](https://pmcgee-personal.github.io/shipstation-api-webhook-simulator/)
 
-A lightweight, browser-based tool to simulate **ShipStation API (fka ShipEngine)** tracking webhooks with production-accurate JSON schemas.
+A lightweight, browser-based tool that sends **ShipStation API (formerly ShipEngine)** tracking webhooks to your endpoint, so you can build and test a webhook receiver without waiting on a live shipment.
 
-📱 Mobile Installation (PWA)
-This simulator is a Progressive Web App, meaning you can install it on your phone's home screen without using an App Store:
+The payloads are **real `API_TRACK` captures** from production, re-timed so the newest scan happens the moment you click the button. They come from the [ShipStation Integration Toolkit](https://github.com/pmcgee-personal/shipstation-integration-toolkit) (`webhooks/tracking-v1/`), where every field and carrier quirk is documented.
 
-iOS (Safari): Tap the Share icon (square with up arrow) and select "Add to Home Screen."
-
-Android (Chrome): Tap the three dots in the top right and select "Install app" or "Add to Home screen."
-
-Desktop: Click the Install icon in the address bar of Chrome or Edge to run it as a standalone window.
-
-## 🛠 Features
-* **Carrier Specifics:** Supports FedEx, UPS, and USPS event codes and geographic data.
-* **Timeline Logic:** Automatically generates a logical history of events with relative timestamps.
-* **Production Schema:** Matches the ShipStation API `API_TRACK` resource type exactly, including dynamic label IDs and null-safe event objects.
-* **Offline Ready (Basic)**: Includes a Service Worker (sw.js) to meet PWA installation requirements.
-* **App Manifest**: Configured with a manifest.json for a native look and feel, including a custom app icon and theme colors.
-* **Mobile Optimized**: Uses a specific viewport meta-tag to prevent accidental zooming on mobile inputs.
+> **Which webhook is this?** `API_TRACK` is the tracking webhook for **ShipStation API** accounts. ShipStation accounts receive a different one, `TRACK_EVENT_V2`, which this tool does not send. An integrator normally has one kind of account, not both. The toolkit has fixtures for both under `webhooks/tracking-v1/` and `webhooks/tracking-v2/`.
 
 ---
 
-## ⚠️ Critical: CORS Setup
-To bypass browser security restrictions (CORS) when sending requests from GitHub Pages to a third-party URL:
+## 🛠 Features
 
-1. Visit the [CORS Anywhere Demo Page](https://cors-anywhere.herokuapp.com/corsdemo).
-2. Click **"Request temporary access to the demo server"**.
-3. Return to the Simulator and fire your webhooks.
+- **Four carriers:** UPS, USPS, FedEx and DHL eCommerce.
+- **Four scenarios:** Label created, In transit, Out for delivery and Delivered. Each carrier's four scenarios are one real parcel at four points in its journey.
+- **Your own tracking number:** type one, or leave the pre-filled one. A non-blocking hint flags numbers that don't match the carrier's usual format.
+- **Realistic timing:** the newest scan happens now, and every other scan keeps its original distance from it.
+- **CORS proxy field:** defaults to CORS Anywhere. Clear it to send directly, or paste your own proxy.
+- **Activity log:** each send shows SENT or ERR with the reason (for example `HTTP 200`, `HTTP 403` or a network error).
+- **Installable PWA:** works from your home screen. It always loads the latest files when online and falls back to its saved copy offline.
 
 ---
 
 ## 📖 How to Use
-1. **Enter Target URL:** Paste your webhook endpoint (e.g., a `webhook.site` URL).
-2. **Select Carrier & Status:** Choose the scenario you want to test.
-3. **Fire Webhook:** Click the button.
-4. **Check History:** The "Recent Activity" log shows a green **SENT** tag if the destination server accepted the payload.
+
+1. **Enter the Target URL:** paste your webhook endpoint, for example a `webhook.site` URL.
+2. **Check the proxy:** leave the default CORS Anywhere box, or see [Sending and CORS](#-sending-and-cors) below.
+3. **Pick a carrier and scenario.**
+4. **Tracking number (optional):** keep the generated one, type your own, or clear the box and a number is generated when you fire.
+5. **Fire Webhook:** the log shows a green **SENT** tag if the server accepted the request, or a red **ERR** tag with the reason.
+
+You can also run it locally by opening `index.html` in a browser. No build step is needed.
 
 ---
 
-## 📄 Example Payload Structure
-The tool sends a `POST` request with a JSON body following the ShipStation API standard:
-- `estimated_delivery_date`: Null if status is Delivered.
-- `actual_delivery_date`: Populated only if status is Delivered.
+## ⚠️ Sending and CORS
+
+Browsers block cross-origin requests unless the receiving server allows them, so by default the simulator sends through a CORS proxy.
+
+**Default (CORS Anywhere demo):**
+
+1. Visit the [CORS Anywhere demo page](https://cors-anywhere.herokuapp.com/corsdemo).
+2. Click **"Request temporary access to the demo server"**.
+3. Return to the simulator and fire your webhooks.
+
+The unlock is temporary and applies to the browser you used. The demo server is shared and rate limited, and it may stop working at any time.
+
+**Other options**
+
+- **Your own proxy:** paste its address into the CORS Proxy box. If the address ends in `/`, `?` or `=` it is used as typed, otherwise a `/` is added. Your webhook URL is added to the end.
+- **No proxy:** clear the box to send straight to your webhook URL. The simulator's requests carry custom headers, so the receiving server has to allow cross-origin requests and answer the browser's preflight check for those headers.
+
+**Reading an ERR**
+
+| Log message                                         | Likely cause                                                                          |
+| --------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| `HTTP 403`                                          | The CORS Anywhere unlock is missing or has expired                                    |
+| `Network error (proxy locked, CORS or unreachable)` | The proxy isn't unlocked or is down, or with no proxy the receiver doesn't allow CORS |
+| `HTTP 4xx` / `5xx` from your server                 | The request reached your endpoint and it rejected it                                  |
+
+---
+
+## 📄 What's in the Payload
+
+Every send is a `POST` with a JSON body in the ShipStation API `API_TRACK` shape: `resource_url`, `resource_type` and a `data` object with 14 keys and events with 19 keys each, in the same order as production.
+
+**Changed on every send**
+
+- `data.tracking_number` and the `tracking_number` in `resource_url` (your number).
+- Every timestamp, shifted so the newest scan is "now". Each carrier's own encoding is kept.
+- The `se-` ID in `label_url`, for the carriers that populate it.
+
+**Everything else is exactly as captured**, including the quirks. `null` and empty strings, status codes and the order of events are left alone, so a parser tested here sees what production sends.
+
+### Carrier differences
+
+|                         | UPS                        | USPS                          | FedEx                      | DHL eCommerce                     |
+| ----------------------- | -------------------------- | ----------------------------- | -------------------------- | --------------------------------- |
+| `carrier_occurred_at`   | No suffix, carrier-local   | `-07:00` offset               | `Z` (UTC)                  | `Z` (UTC)                         |
+| `status_detail_code`    | Populated                  | Populated                     | Populated                  | `null`                            |
+| `label_url`             | `null`                     | `null`                        | Populated                  | Populated                         |
+| City and state on scans | Yes, except the label scan | Yes, except no-location scans | Yes, except the label scan | **No** (ZIP and coordinates only) |
+| ZIP code                | Delivery scan only         | Most scans                    | **Never**                  | Every scan                        |
+
+The toolkit's `webhooks/tracking-v1/` folder documents each carrier in full.
+
+### Not simulated
+
+- **Exceptions:** there's no real capture of a delivery exception yet, so the option is hidden.
+- **Signed deliveries and proof of delivery:** these fields are empty in every real payload.
+- **Non-US scans.**
+- **Real signatures:** the request carries `x-shipengine-timestamp`, `x-shipengine-rsa-sha256-signature` and `x-shipengine-rsa-sha256-key-id` headers, but the signature and key ID are placeholders. A receiver that verifies ShipStation's RSA signature will reject these requests.
+
+---
+
+## 📱 Mobile Installation (PWA)
+
+This simulator is a Progressive Web App, so you can install it without an app store:
+
+- **iOS (Safari):** tap the Share icon (square with an up arrow) and select **Add to Home Screen**.
+- **Android (Chrome):** tap the three dots in the top right and select **Install app** or **Add to Home screen**.
+- **Desktop:** click the Install icon in the address bar of Chrome or Edge to run it as a standalone window.
+
+---
+
+## 🗂 Project Files
+
+| File            | Purpose                                                                         |
+| --------------- | ------------------------------------------------------------------------------- |
+| `index.html`    | The page and its logic                                                          |
+| `replay.js`     | Dependency-free engine that re-times a fixture and swaps in the tracking number |
+| `fixtures.js`   | The 16 real `API_TRACK` captures (4 carriers × 4 scenarios)                     |
+| `sw.js`         | Service worker: network first, with an offline fallback                         |
+| `manifest.json` | PWA manifest                                                                    |
+| `icon.png`      | App icon                                                                        |
+
+### Refreshing the fixtures
+
+`fixtures.js` was copied once from the toolkit's `webhooks/tracking-v1/` folder. To refresh it, copy each carrier's four `api-track-*.json` files into it, drop the toolkit's `_captured_at` key (ShipStation doesn't send it), and keep the carrier keys as `ups`, `usps`, `fedex` and `dhl_global_mail`. Automating this is a possible future step.
+
+### Branches
+
+`gh-pages` holds this app and is the branch GitHub Pages serves. `main` holds an earlier, local Node.js version of the tool.
 
 ---
 
 ## 🔧 Tech Stack
-* **Axios & Day.js** (CDN loaded)
-* **GitHub Pages** (Hosting)
-* **CORS Anywhere** (Proxy)
+
+- **Axios** (CDN loaded)
+- **Plain JavaScript:** no build step, and `replay.js` has no dependencies
+- **GitHub Pages** (hosting)
+- **CORS Anywhere** (default proxy, replaceable)
