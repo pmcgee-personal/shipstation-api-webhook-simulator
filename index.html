@@ -1,3 +1,5 @@
+# index.html (step 4) Copy everything inside the code block below and paste it
+over the contents of `index.html`. ````html
 <!doctype html>
 <html lang="en">
   <head>
@@ -133,13 +135,7 @@
   <body>
     <div class="container">
       <h1>🚀 ShipStation API Webhook Simulator</h1>
-      <div class="info-box">
-        <strong>Required:</strong> Activate
-        <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank"
-          >CORS Anywhere</a
-        >
-        first.
-      </div>
+      <div id="proxy-note" class="info-box"></div>
       <div id="load-error" class="error-box" style="display: none"></div>
 
       <div class="form-group">
@@ -149,6 +145,22 @@
           id="target_url"
           placeholder="https://webhook.site/..."
         />
+      </div>
+
+      <div class="form-group">
+        <label>CORS Proxy (optional)</label>
+        <input
+          type="text"
+          id="proxy_url"
+          value="https://cors-anywhere.herokuapp.com/"
+          autocomplete="off"
+          autocapitalize="off"
+          spellcheck="false"
+        />
+        <div class="hint">
+          Put in front of your webhook URL. Clear it to send straight to the
+          webhook URL.
+        </div>
       </div>
 
       <div class="form-group">
@@ -174,6 +186,11 @@
       </div>
 
       <button id="send-btn" onclick="fireWebhook()">Fire Webhook 🔥</button>
+      <div class="hint">
+        The x-shipengine-* signature headers are simulated placeholders, so a
+        receiver that verifies ShipStation's RSA signature will reject these
+        requests.
+      </div>
       <div class="history"><div id="log-list"></div></div>
     </div>
 
@@ -230,6 +247,38 @@
         updateTrackingHint();
       }
 
+      // Proxy goes in front of the target URL. Add a "/" unless it already ends
+      // in one, or in "?" / "=" (query-style proxies such as https://host/?url=).
+      function withProxy(proxy, target) {
+        if (!proxy) return target;
+        return /[\/?=]$/.test(proxy) ? proxy + target : proxy + "/" + target;
+      }
+
+      function updateProxyNote() {
+        const proxy = $("proxy_url").value.trim();
+        const note = $("proxy-note");
+        if (/cors-anywhere\.herokuapp\.com/i.test(proxy)) {
+          note.innerHTML =
+            '<strong>Required:</strong> Activate <a href="https://cors-anywhere.herokuapp.com/corsdemo" target="_blank">CORS Anywhere</a> first. The unlock is temporary and applies to this browser only.';
+        } else if (!proxy) {
+          note.textContent =
+            "No proxy: the browser sends straight to your webhook URL, so that server must allow cross-origin (CORS) requests from this page.";
+        } else {
+          note.textContent =
+            "Requests go through " +
+            proxy +
+            " (your webhook URL is added to the end). Make sure that proxy is running.";
+        }
+      }
+
+      function describeError(err) {
+        if (err.response) return "HTTP " + err.response.status;
+        if (err.code === "ERR_NETWORK" || err.message === "Network Error") {
+          return "Network error (proxy locked, CORS or unreachable)";
+        }
+        return err.message || "Unknown error";
+      }
+
       function init() {
         if (!window.FIXTURES || !window.Replay) {
           const box = $("load-error");
@@ -257,16 +306,23 @@
           trackingEdited = true;
           updateTrackingHint();
         });
+        $("proxy_url").addEventListener("input", updateProxyNote);
+        updateProxyNote();
         setDefaultTracking();
       }
 
       async function fireWebhook() {
         const btn = $("send-btn");
         const targetUrl = $("target_url").value.trim();
-        const proxyUrl = "https://cors-anywhere.herokuapp.com/";
-        const finalUrl = proxyUrl + targetUrl;
+        const proxyUrl = $("proxy_url").value.trim();
 
         if (!targetUrl) return alert("URL required.");
+        if (proxyUrl && !/^https?:\/\//i.test(proxyUrl)) {
+          return alert(
+            "The proxy must start with http:// or https:// (or be left blank).",
+          );
+        }
+        const finalUrl = withProxy(proxyUrl, targetUrl);
 
         const config = {
           carrier: $("carrier").value,
@@ -295,8 +351,8 @@
         const entry = { ...config, tracking: payload.data.tracking_number };
 
         try {
-          // Updated POST with Authentication Headers
-          await axios.post(finalUrl, payload, {
+          // The three x-shipengine-* signature headers are simulated placeholders.
+          const res = await axios.post(finalUrl, payload, {
             headers: {
               "X-Requested-With": "XMLHttpRequest",
               "x-shipengine-timestamp": Math.floor(
@@ -307,10 +363,10 @@
               "x-shipengine-rsa-sha256-key-id": "key_sim_123456789",
             },
           });
-          addLog(entry, true);
+          addLog({ ...entry, reason: "HTTP " + res.status }, true);
         } catch (err) {
           console.error(err);
-          addLog(entry, false);
+          addLog({ ...entry, reason: describeError(err) }, false);
         } finally {
           btn.disabled = false;
         }
@@ -324,7 +380,7 @@
             <div class="history-item">
                 <span>
                     <strong>${esc(l.time)}</strong> ${esc(labelFor(Replay.CARRIERS, l.carrier, "label"))} · ${esc(labelFor(Replay.SCENARIOS, l.scenario, "label"))}
-                    <div class="meta">${esc(l.tracking)}</div>
+                    <div class="meta">${esc(l.tracking)} · ${esc(l.reason)}</div>
                 </span>
                 <span class="status-tag ${l.success ? "success" : "error"}">${l.success ? "SENT" : "ERR"}</span>
             </div>
@@ -349,3 +405,4 @@
     </script>
   </body>
 </html>
+````
