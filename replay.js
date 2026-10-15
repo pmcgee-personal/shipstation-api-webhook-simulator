@@ -84,6 +84,48 @@
     return typeof s === "string" && /T00:00:00$/.test(s);
   }
 
+  // USPS puts the newest scan's date and time inside its top-level status
+  // sentence ("... at 6:10 am on October 1, 2026 in LOS ANGELES, CA 90025.").
+  // Those have to move with the scan or the sentence contradicts the events.
+  const MONTHS = [
+    "January",
+    "February",
+    "March",
+    "April",
+    "May",
+    "June",
+    "July",
+    "August",
+    "September",
+    "October",
+    "November",
+    "December",
+  ];
+  const LONG_DATE = new RegExp(
+    "\\b(" + MONTHS.join("|") + ") \\d{1,2}, \\d{4}\\b",
+    "g",
+  );
+  const CLOCK = /\b\d{1,2}:\d{2} (am|pm)\b/g;
+
+  function redateText(text, wall) {
+    if (typeof text !== "string") return text;
+    const d = new Date(wall);
+    const hour = d.getUTCHours();
+    const date =
+      MONTHS[d.getUTCMonth()] +
+      " " +
+      d.getUTCDate() +
+      ", " +
+      d.getUTCFullYear();
+    const clock =
+      (hour % 12 || 12) +
+      ":" +
+      pad(d.getUTCMinutes()) +
+      " " +
+      (hour >= 12 ? "pm" : "am");
+    return text.replace(LONG_DATE, date).replace(CLOCK, clock);
+  }
+
   // ---- tracking numbers --------------------------------------------------
 
   function digits(n, rnd) {
@@ -170,6 +212,12 @@
     );
   }
 
+  function earliestEvent(events) {
+    return events.reduce((a, b) =>
+      parseTs(b.occurred_at).wall < parseTs(a.occurred_at).wall ? b : a,
+    );
+  }
+
   /**
    * @param {object} opts
    * @param {string} opts.carrier         carrier_code: ups | usps | fedex | dhl_global_mail
@@ -221,13 +269,19 @@
     const newest = newestEvent(d.events);
     const delta = nowMs - parseTs(newest.occurred_at).wall;
 
-    // How many calendar days the newest scan's wall clock moved. Used for
-    // date-style fields (ETA, midnight ship dates) so they keep their
-    // captured relationship to the delivery date instead of drifting to odd
-    // times of day.
-    const ref = parseTs(newest.carrier_occurred_at || newest.occurred_at).wall;
-    const dayShiftMs =
-      (Math.floor((ref + delta) / DAY) - Math.floor(ref / DAY)) * DAY;
+    // How many calendar days a scan's wall clock moves when shifted by
+    // `delta`. Date-style fields move by whole days from the scan they are
+    // tied to, so they keep their captured relationship to it instead of
+    // drifting to odd times of day. The ETA is tied to the newest scan (the
+    // delivery date); a midnight ship_date is the label date, so it is tied to
+    // the earliest scan. They are not the same shift when `delta` is not a
+    // whole number of days.
+    const dayShiftFor = (e) => {
+      const w = parseTs(e.carrier_occurred_at || e.occurred_at).wall;
+      return (Math.floor((w + delta) / DAY) - Math.floor(w / DAY)) * DAY;
+    };
+    const dayShiftMs = dayShiftFor(newest);
+    const labelDayShiftMs = dayShiftFor(earliestEvent(d.events));
 
     d.events.forEach((e) => {
       e.occurred_at = shiftTs(e.occurred_at, delta);
@@ -238,10 +292,16 @@
     // value derived from a scan (USPS, FedEx, DHL) moves with that scan.
     d.ship_date = shiftTs(
       d.ship_date,
-      isNaiveMidnight(d.ship_date) ? dayShiftMs : delta,
+      isNaiveMidnight(d.ship_date) ? labelDayShiftMs : delta,
     );
     d.estimated_delivery_date = shiftTs(d.estimated_delivery_date, dayShiftMs);
     d.actual_delivery_date = shiftTs(d.actual_delivery_date, delta);
+
+    // The top-level sentence describes the newest scan, so use its new time.
+    d.carrier_status_description = redateText(
+      d.carrier_status_description,
+      parseTs(newest.carrier_occurred_at || newest.occurred_at).wall,
+    );
 
     return body;
   }

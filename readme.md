@@ -1,8 +1,3 @@
-# readme.md (updated)
-
-Copy everything inside the code block below and paste it over the contents of `readme.md`.
-
-```markdown
 # 🚀 ShipStation API Webhook Simulator
 
 [![View Live](https://img.shields.io/badge/View-Live_Demo-brightgreen)](https://pmcgee-personal.github.io/shipstation-api-webhook-simulator/)
@@ -20,7 +15,7 @@ The payloads are **real `API_TRACK` captures** from production, sanitized and re
 - **Four carriers:** UPS, USPS, FedEx and DHL eCommerce.
 - **Four scenarios:** Label created, In transit, Out for delivery and Delivered. Each carrier's four scenarios are one real parcel at four points in its journey.
 - **Your own tracking number:** type one, or leave the pre-filled one. A non-blocking hint flags numbers that don't match the carrier's usual format.
-- **Realistic timing:** the newest scan happens now, and every other scan keeps its original distance from it.
+- **Realistic timing:** the newest scan happens now, and every other scan keeps its original distance from it. Each send is independent, so the same parcel's older scans get different timestamps in each webhook.
 - **CORS proxy field:** defaults to CORS Anywhere. Clear it to send directly, or paste your own proxy.
 - **Activity log:** each send shows SENT or ERR with the reason (for example `HTTP 200`, `HTTP 403` or a network error).
 - **Installable PWA:** works from your home screen. It always loads the latest files when online and falls back to its saved copy offline.
@@ -74,6 +69,8 @@ Every send is a `POST` with a JSON body in the ShipStation API `API_TRACK` shape
 
 - `data.tracking_number` and the `tracking_number` in `resource_url` (your number).
 - Every timestamp, shifted so the newest scan is "now". Each carrier's own encoding is kept.
+- The top-level `ship_date`, `estimated_delivery_date` and `actual_delivery_date`, moved with the scans they are tied to so their gaps match the captured parcel.
+- The date and time inside USPS's top-level status sentence, for example "out for delivery on October 15, 2026 at 12:17 am".
 - The `se-` ID in `label_url`, for the carriers that populate it.
 
 **Everything else is exactly as captured**, including the quirks. `null` and empty strings, status codes and the order of events are left alone, so a parser tested here sees what production sends.
@@ -93,6 +90,7 @@ Every send is a `POST` with a JSON body in the ShipStation API `API_TRACK` shape
 - **Exceptions:** there's no real capture of a delivery exception yet, so the option is hidden.
 - **Signed deliveries and proof of delivery:** these fields are empty in every real payload.
 - **Non-US scans.**
+- **A continuous timeline across sends:** every send re-times its own copy of the parcel, so the same event (for example the label scan) has a different timestamp in each webhook. A receiver that de-duplicates on tracking number, `occurred_at` and `event_code` will treat it as a new event each time. Treat each webhook as a separate snapshot.
 - **Real signatures:** the request carries `x-shipengine-timestamp`, `x-shipengine-rsa-sha256-signature` and `x-shipengine-rsa-sha256-key-id` headers, but the signature and key ID are placeholders. A receiver that verifies ShipStation's RSA signature will reject these requests.
 
 ---
@@ -134,4 +132,3 @@ This simulator is a Progressive Web App, so you can install it without an app st
 - **Plain JavaScript:** no build step, and `replay.js` has no dependencies
 - **GitHub Pages** (hosting)
 - **CORS Anywhere** (default proxy, replaceable)
-```
